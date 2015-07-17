@@ -23,13 +23,13 @@ centre_backup() {
     chmod 666 ${BACKUP_FILE_PATH}
     
     expect -c "
-    set timeout 20
-    spawn telnet $HOST_NAME
-    expect \"login:\"   ; send \"${USER}\n\"
-    expect \"Password:\"; send \"${PASSWORD}\n\"
-    expect \"Manager\"  ; send \"${CREATE_TMP_FILE}\n\"
-    expect \"Manager\"  ; send \"${BACKUP_COMMAND}\n\"
-    expect \"Manager\"  ; send \"${DELETE_TMP_FILE}\n\"
+        set timeout 20
+        spawn telnet $HOST_NAME
+        expect \"login:\"   ; send \"${USER}\n\"
+        expect \"Password:\"; send \"${PASSWORD}\n\"
+        expect \"Manager\"  ; send \"${CREATE_TMP_FILE}\n\"
+        expect \"Manager\"  ; send \"${BACKUP_COMMAND}\n\"
+        expect \"Manager\"  ; send \"${DELETE_TMP_FILE}\n\"
     "
 }
 
@@ -52,25 +52,45 @@ foundry_backup() {
 backup() {
     HOST_NAME=$1
     case ${HOST_NAME} in
-	foundry* ) foundry_backup $HOST_NAME ;;
-	alaxala* | nec* ) alaxala_backup $HOST_NAME ;;
-	juniper* ) juniper_backup $HOST_NAME;;
-	cisco* ) cisco_backup $HOST_NAME;;
-	centre* ) centre_backup $HOST_NAME;;
+	    foundry* ) foundry_backup $HOST_NAME ;;
+	    alaxala* | nec* ) alaxala_backup $HOST_NAME ;;
+	    juniper* ) juniper_backup $HOST_NAME;;
+	    cisco* ) cisco_backup $HOST_NAME;;
+	    centre* ) centre_backup $HOST_NAME;;
     esac
 }
 
 get_password() {
+    if [ ! -f ${ENCRYPTION_KEY_FILE} ] || [ ! -f ${ENCRYPTED_PASSWORD_FILE} ];
+    then
+	    echo "Encrypted password file or private key file for decryption does not exist."
+	    exit 1
+    fi
+
     TMP_PASSWORD_FILE=tmp_password_${DATE}
     openssl enc -d -aes256 -in ${ENCRYPTED_PASSWORD_FILE} -out ${TMP_PASSWORD_FILE} -kfile ${ENCRYPTION_KEY_FILE}
     PASSWORD=`cat $TMP_PASSWORD_FILE`
     rm $TMP_PASSWORD_FILE    
 }
 
-# main function
-get_password
+create_backup_directory() {
+    if [ -d ${BACKUP_DIR} ]
+    then
+	    rm -rf ${BACKUP_DIR}
+    fi
+    mkdir -p ${BACKUP_DIR}
+}
 
-mkdir -p ${BACKUP_DIR}
+## main function ##
+get_password
+create_backup_directory
+
+if [ ! -f ${HOSTS_FILE} ]
+then
+    echo "hosts file does not exist."
+    exit 1
+fi
+
 for HOST_NAME in `cat ${HOSTS_FILE}`;
 do
     backup $HOST_NAME
