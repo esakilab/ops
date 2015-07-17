@@ -12,7 +12,6 @@ ENCRYPTION_KEY_FILE=
 TFTPSERVER=10.0.0.1
 
 centre_backup() {
-    HOST_NAME=$1
     USER="manager"
     TMP_FILE="autobackup.cfg"
     BACKUP_FILE_PATH=${BACKUP_DIR}/${HOST_NAME}.${DATE}.cfg
@@ -34,7 +33,26 @@ centre_backup() {
 }
 
 cisco_backup() {
-    echo cisco
+    USER="elab"
+    TMP_FILE="autobackup.cfg"
+    BACKUP_FILE_PATH=${BACKUP_DIR}/${HOST_NAME}.${DATE}.cfg
+    CREATE_TMP_FILE="CREATE CONFIG=${TMP_FILE}"
+    BACKUP_COMMAND="UPLOAD METHO=tftp FILE=${TMP_FILE} DESTFILE=${BACKUP_FILE_PATH} SERVER=${TFTPSERVER}"
+    DELETE_TMP_FILE="DELTE FILE=${TMP_FILE}"
+    touch ${BACKUP_FILE_PATH}
+    chmod 666 ${BACKUP_FILE_PATH}
+    
+    expect -c "
+        set timeout 20
+        spawn telnet $HOST_NAME
+        expect \"[Uu]sername:\"   ; send \"${USER}\n\"
+        expect \"Password:\"; send \"${PASSWORD}\n\"
+        expect \"cisco\"  ; send \"en\n\"
+        expect \"Password:\"; send \"${PASSWORD}\n\"
+        expect \"cisco\"  ; send \"${CREATE_TMP_FILE}\n\"
+        expect \"cisco\"  ; send \"${BACKUP_COMMAND}\n\"
+        expect \"cisco\"  ; send \"${DELETE_TMP_FILE}\n\"
+    "
 }
 
 alaxala_backup() {
@@ -50,13 +68,12 @@ foundry_backup() {
 }
 
 backup() {
-    HOST_NAME=$1
     case ${HOST_NAME} in
-	    foundry* ) foundry_backup $HOST_NAME ;;
-	    alaxala* | nec* ) alaxala_backup $HOST_NAME ;;
-	    juniper* ) juniper_backup $HOST_NAME;;
-	    cisco* ) cisco_backup $HOST_NAME;;
-	    centre* ) centre_backup $HOST_NAME;;
+	    foundry* ) foundry_backup ;;
+	    alaxala* | nec* ) alaxala_backup;;
+	    juniper* ) juniper_backup ;;
+	    cisco* ) cisco_backup ;;
+	    centre* ) centre_backup ;;
     esac
 }
 
