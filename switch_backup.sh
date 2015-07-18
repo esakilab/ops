@@ -12,7 +12,11 @@ BACKUP_SERVER=10.0.0.1
 centre_backup() {
     USER="manager"
     TMP_FILE="autobackup.cfg"
-    BACKUP_FILE_PATH=${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg
+    LOCAL_TMP_FILE="tmp.cfg"
+    case ${HOST_NAME} in
+        centre9) BACKUP_FILE_PATH=${BACKUP_DIR}/${LOCAL_TMP_FILE};; # this is due to the filename limitation
+        *) BACKUP_FILE_PATH=${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg;;
+    esac
     CREATE_TMP_FILE_COMMAND="CREATE CONFIG=${TMP_FILE}"
     BACKUP_COMMAND="UPLOAD METHO=tftp FILE=${TMP_FILE} DESTFILE=${BACKUP_FILE_PATH} SERVER=${BACKUP_SERVER}"
     DELETE_TMP_FILE_COMMAND="DELTE FILE=${TMP_FILE}"
@@ -20,33 +24,37 @@ centre_backup() {
     chmod 666 ${BACKUP_FILE_PATH}
     
     expect -c "
-        set timeout 20
-        spawn telnet $HOST_NAME
+        set timeout 2
+        spawn telnet ${HOST_NAME}
         expect \"login:\"   ; send \"${USER}\n\"
         expect \"Password:\"; send \"${PASSWORD}\n\"
         expect \"Manager\"  ; send \"${CREATE_TMP_FILE_COMMAND}\n\"
         expect \"Manager\"  ; send \"${BACKUP_COMMAND}\n\"
         expect \"Manager\"  ; send \"${DELETE_TMP_FILE_COMMAND}\n\"
     "
+    case ${HOST_NAME} in
+        centre9) mv ${BACKUP_DIR}/${LOCAL_TMP_FILE} ${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg;;
+    esac
 }
 
 cisco_backup() {
     USER="elab"
     BACKUP_FILE=${DATE_PATH}/${HOST_NAME}.${EXEC_DATE}.cfg
-    BACKUP_COMMAND="copy running-config tftp:${BACKUP_SERVER}/${BACKUP_FILE}"
-    touch ${TFTP_ROOT}/${BACKUP_FILE_PATH}
-    chmod 666 ${BACKUP_FILE_PATH}
+    BACKUP_COMMAND="copy running-config tftp://${BACKUP_SERVER}/${BACKUP_FILE}"
+    touch ${TFTP_ROOT}/${BACKUP_FILE}
+    chmod 666 ${BACKUP_FILE}
     
     expect -c "
-        set timeout 20
-        spawn telnet $HOST_NAME
-        expect \"[Uu]sername:\" ; send \"${USER}\n\"
-        expect \"Password:\"    ; send \"${PASSWORD}\n\"
-        expect \"cisco\"        ; send \"en\n\"
-        expect \"Password:\"    ; send \"${PASSWORD}\n\"
-        expect \"cisco\"        ; send \"${BACKUP_COMMAND}\n\"
-        expect \"Address\"      ; send \"\n\"
-        expect \"Destination\"  ; send \"\n\"
+        set timeout 2
+        spawn telnet ${HOST_NAME}
+        expect \"\[Uu\]sername:\" ; send \"${USER}\n\"
+        expect \"Password:\"      ; send \"${PASSWORD}\n\"
+        expect \"cisco\"          ; send \"en\n\"
+        expect \"Password:\"      ; send \"${PASSWORD}\n\"
+        expect \"cisco\"          ; send \"${BACKUP_COMMAND}\n\"
+        expect \"Address\"        ; send \"\n\"
+        expect \"Destination\"    ; send \"\n\"
+        expect \"!!\"             ;
     "
 }
 
@@ -54,18 +62,19 @@ alaxala_backup() {
     USER="elab"
     BACKUP_FILE=${DATE_PATH}/${HOST_NAME}.${EXEC_DATE}.cfg
     BACKUP_COMMAND="copy running-config tftp:${BACKUP_SERVER}/${BACKUP_FILE}"
-    touch ${TFTP_ROOT}/${BACKUP_FILE_PATH}
-    chmod 666 ${BACKUP_FILE_PATH}
+    touch ${TFTP_ROOT}/${BACKUP_FILE}
+    chmod 666 ${BACKUP_FILE}
     
     expect -c "
-        set timeout 20
-        spawn telnet $HOST_NAME
-        expect \"[Ll]ogin:\" ; send \"${USER}\n\"
-        expect \"Password:\"    ; send \"${PASSWORD}\n\"
-        expect \"nec\"        ; send \"en\n\"
-        expect \"Password:\"    ; send \"${PASSWORD}\n\"
-        expect \"nec\"        ; send \"${BACKUP_COMMAND}\n\"
-        expect \"Configuration\"  ; send \"y\n\"
+        set timeout 2
+        spawn telnet ${HOST_NAME}
+        expect \"\[Ll\]ogin:\"        ; send \"${USER}\n\"
+        expect \"Password:\"          ; send \"${PASSWORD}\n\"
+        expect \"\[nN\]\[eE\]\[cC\]\" ; send \"en\n\"
+        expect \"Password:\"          ; send \"${PASSWORD}\n\"
+        expect \"\[nN\]\[eE\]\[cC\]\" ; send \"${BACKUP_COMMAND}\n\"
+        expect \"Configuration\"      ; send \"y\n\"
+        expect \"Data\"               ;
     "
 }
 
@@ -80,15 +89,16 @@ juniper_backup() {
     chmod 666 ${BACKUP_FILE_PATH}
     
     expect -c "
-        set timeout 20
-        spawn telnet $HOST_NAME
-        expect \"[Ll]ogin:\"    ; send \"${USER}\n\"
-        expect \"Password:\"    ; send \"${PASSWORD}\n\"
-        expect \"elab@\"        ; send \"configure\n\"
-        expect \"elab@\"        ; send \"${CREATE_TMP_FILE_COMMAND}\n\"
-        expect \"elab@\"        ; send \"exit\n\"
-        expect \"elab@\"        ; send \"${BACKUP_COMMAND}\n\"
-        expect \"elab@\"        ; send \"${DELETE_TMP_FILE_COMMAND}\n\"
+        set timeout 2
+        spawn telnet ${HOST_NAME}
+        expect \"\[Ll\]ogin:\" ; send \"${USER}\n\"
+        expect \"Password:\"   ; send \"${PASSWORD}\n\"
+        expect \"elab@\"       ; send \"configure\n\"
+        expect \"elab@\"       ; send \"${CREATE_TMP_FILE_COMMAND}\n\"
+        expect \"elab@\"       ; send \"exit\n\"
+        expect \"elab@\"       ; send \"${BACKUP_COMMAND}\n\"
+        expect \"elab@\"       ; send \"${DELETE_TMP_FILE_COMMAND}\n\"
+        expect \"elab@\"       ;
     "
 }
 
