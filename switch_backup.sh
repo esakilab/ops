@@ -14,7 +14,7 @@ centre_backup() {
     TMP_FILE="autobackup.cfg"
     LOCAL_TMP_FILE="tmp.cfg"
     case ${HOST_NAME} in
-        centre9) BACKUP_FILE_PATH=${BACKUP_DIR}/${LOCAL_TMP_FILE};; # this is due to the filename limitation
+        centre9) BACKUP_FILE_PATH=${TFTP_ROOT}/${LOCAL_TMP_FILE};; # this is due to the filename limitation
         *) BACKUP_FILE_PATH=${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg;;
     esac
     CREATE_TMP_FILE_COMMAND="CREATE CONFIG=${TMP_FILE}"
@@ -31,9 +31,10 @@ centre_backup() {
         expect \"Manager\"  ; send \"${CREATE_TMP_FILE_COMMAND}\n\"
         expect \"Manager\"  ; send \"${BACKUP_COMMAND}\n\"
         expect \"Manager\"  ; send \"${DELETE_TMP_FILE_COMMAND}\n\"
+        expect \"Manager\"  ; 
     "
     case ${HOST_NAME} in
-        centre9) mv ${BACKUP_DIR}/${LOCAL_TMP_FILE} ${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg;;
+        centre9) mv ${BACKUP_FILE_PATH} ${BACKUP_DIR}/${HOST_NAME}.${EXEC_DATE}.cfg;;
     esac
 }
 
@@ -61,7 +62,7 @@ cisco_backup() {
 alaxala_backup() {
     USER="elab"
     BACKUP_FILE=${DATE_PATH}/${HOST_NAME}.${EXEC_DATE}.cfg
-    BACKUP_COMMAND="copy running-config tftp:${BACKUP_SERVER}/${BACKUP_FILE}"
+    BACKUP_COMMAND="copy running-config tftp://${BACKUP_SERVER}/${BACKUP_FILE}"
     touch ${TFTP_ROOT}/${BACKUP_FILE}
     chmod 666 ${TFTP_ROOT}/${BACKUP_FILE}
     
