@@ -42,7 +42,7 @@ cisco_backup() {
     BACKUP_FILE=${DATE_PATH}/${HOST_NAME}.${EXEC_DATE}.cfg
     BACKUP_COMMAND="copy running-config tftp://${BACKUP_SERVER}/${BACKUP_FILE}"
     touch ${TFTP_ROOT}/${BACKUP_FILE}
-    chmod 666 ${BACKUP_FILE}
+    chmod 666 ${TFTP_ROOT}/${BACKUP_FILE}
     
     expect -c "
         set timeout 2
@@ -63,7 +63,7 @@ alaxala_backup() {
     BACKUP_FILE=${DATE_PATH}/${HOST_NAME}.${EXEC_DATE}.cfg
     BACKUP_COMMAND="copy running-config tftp:${BACKUP_SERVER}/${BACKUP_FILE}"
     touch ${TFTP_ROOT}/${BACKUP_FILE}
-    chmod 666 ${BACKUP_FILE}
+    chmod 666 ${TFTP_ROOT}/${BACKUP_FILE}
     
     expect -c "
         set timeout 2
